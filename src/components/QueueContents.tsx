@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { QueueItem, getQueue, subscribeToQueue } from '../services/queueService';
 
 // Polling interval in milliseconds (e.g., refresh every 3 seconds)
@@ -19,8 +19,8 @@ export default function QueueContents({ queue: externalQueue }: QueueContentsPro
   // Use the queue provided by props if available, otherwise use internal state
   const queue = externalQueue || internalQueue;
 
-  // Fetch queue data
-  const fetchQueueData = async () => {
+  // Fix: Use useCallback to wrap the function so we can include it in the dependency array
+  const fetchQueueData = useCallback(async () => {
     try {
       const data = await getQueue();
       
@@ -39,7 +39,7 @@ export default function QueueContents({ queue: externalQueue }: QueueContentsPro
       }
       return null;
     }
-  };
+  }, [externalQueue]); // Add externalQueue as dependency
 
   // Effect for initial load and subscription
   useEffect(() => {
@@ -61,7 +61,7 @@ export default function QueueContents({ queue: externalQueue }: QueueContentsPro
       subscription.unsubscribe();
       clearInterval(pollingInterval);
     };
-  }, [externalQueue]);
+  }, [externalQueue, fetchQueueData]); // Add fetchQueueData to dependencies
 
   useEffect(() => {
     // When externalQueue changes, update the loading state

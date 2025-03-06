@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { supabase } from '../utils/supabase';
+import { AuthError } from '@supabase/supabase-js';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -43,9 +44,10 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
           type: 'success' 
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const authError = error as AuthError;
       setMessage({ 
-        text: error.message || 'An error occurred during authentication', 
+        text: authError.message || 'An error occurred during authentication', 
         type: 'error' 
       });
     } finally {
@@ -113,7 +115,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         <div className="mt-4 text-center text-gray-400">
           {authMode === 'signin' ? (
             <>
-              Don't have an account?{' '}
+              Don&apos;t have an account?{' '}
               <button 
                 onClick={() => setAuthMode('signup')}
                 className="text-blue-400 hover:underline"

@@ -5,6 +5,7 @@ import QueueContents from '../components/QueueContents';
 import AuthModal from '../components/AuthModal';
 import { supabase } from '../utils/supabase';
 import { getQueue, pushToQueue, popFromQueue, subscribeToQueue, QueueItem } from '../services/queueService';
+import { User } from '@supabase/supabase-js';
 
 // Polling interval in milliseconds (e.g., refresh every 3 seconds)
 const POLLING_INTERVAL = 3000;
@@ -13,7 +14,7 @@ export default function Home() {
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [operation, setOperation] = useState<'push' | 'pop'>('push');
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [operationInProgress, setOperationInProgress] = useState(false);
