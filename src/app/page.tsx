@@ -9,8 +9,6 @@ import {
   getQueue,
   getQueueByType,
   pushToQueue,
-  pushToWaitingRoom,
-  popFromQueue,
   popFromWaitingRoom,
   removeQueueItem,
   moveItemToWaitingRoom,
@@ -109,15 +107,20 @@ export default function Home() {
   };
 
   // Pop from waiting room (changed behavior)
-  const handlePop = () => {
+  // Updated to accept an optional queue parameter
+  const handlePop = (queueType?: 'main' | 'waitingRoom') => {
     if (!user) {
       setAuthModalOpen(true);
       return;
     }
     
-    if (waitingQueue.length > 0) {
+    // Default to waitingRoom if no queue type is specified
+    const targetQueue = queueType || 'waitingRoom';
+    const queue = targetQueue === 'main' ? mainQueue : waitingQueue;
+    
+    if (queue.length > 0) {
       setOperation('pop');
-      setActiveQueue('waitingRoom');
+      setActiveQueue(targetQueue);
       setIsOpen(true);
     }
   };
@@ -193,8 +196,8 @@ export default function Home() {
         return;
       }
       
-      // Remove the item
-      const updatedItems = await removeQueueItem(id);
+      // Remove the item - but don't assign the result since we don't use it
+      await removeQueueItem(id);
       
       // Update the appropriate queue
       if (item.queue_type === 'main') {
@@ -277,7 +280,7 @@ export default function Home() {
           <WaitingRoomQueue 
             queue={waitingQueue}
             isAuthenticated={!!user}
-            onRemoveItem={handleRemoveItem} // Keep delete functionality for waiting room
+            onRemoveItem={handleRemoveItem}
           />
         </div>
         
@@ -299,8 +302,8 @@ export default function Home() {
           <QueueContents 
             queue={mainQueue}
             isAuthenticated={!!user}
-            onRemoveItem={handleMoveToWaitingRoom} // Use move functionality for main queue
-            removeButtonLabel="Move to Waiting Room" // Change the label
+            onRemoveItem={handleMoveToWaitingRoom}
+            removeButtonLabel="Move to Waiting Room"
           />
         </div>
         
