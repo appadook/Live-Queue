@@ -4,7 +4,14 @@ import QueueModal from '../components/QueueModal';
 import QueueContents from '../components/QueueContents';
 import AuthModal from '../components/AuthModal';
 import { supabase } from '../utils/supabase';
-import { getQueue, pushToQueue, popFromQueue, subscribeToQueue, QueueItem } from '../services/queueService';
+import { 
+  getQueue, 
+  pushToQueue, 
+  popFromQueue, 
+  removeQueueItem,
+  subscribeToQueue, 
+  QueueItem 
+} from '../services/queueService';
 import { User } from '@supabase/supabase-js';
 
 // Polling interval in milliseconds (e.g., refresh every 3 seconds)
@@ -107,6 +114,26 @@ export default function Home() {
     }
   };
 
+  // Handle removing an individual queue item
+  const handleRemoveItem = async (id: string) => {
+    if (!user) {
+      setAuthModalOpen(true);
+      return;
+    }
+    
+    setOperationInProgress(true);
+    
+    try {
+      // Remove the item and update the queue
+      const updatedQueue = await removeQueueItem(id);
+      setQueue(updatedQueue);
+    } catch (error) {
+      console.error('Failed to remove item:', error);
+    } finally {
+      setOperationInProgress(false);
+    }
+  };
+
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
@@ -166,11 +193,12 @@ export default function Home() {
           </div>
         )}
 
-        {/* Option 1: Pass queue data from parent */}
-        <QueueContents queue={queue} />
-        
-        {/* Option 2: Let QueueContents fetch its own data */}
-        {/* <QueueContents /> */}
+        {/* Pass authentication status and removal handler to QueueContents */}
+        <QueueContents 
+          queue={queue} 
+          isAuthenticated={!!user}
+          onRemoveItem={handleRemoveItem}
+        />
         
         {!user && (
           <p className="mt-4 text-gray-400 text-center">

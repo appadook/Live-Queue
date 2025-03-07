@@ -74,6 +74,22 @@ export async function popFromQueue(): Promise<QueueItem[]> {
   return getQueue();
 }
 
+// Remove a specific item from the queue by ID
+export async function removeQueueItem(id: string): Promise<QueueItem[]> {
+  const { error } = await supabase
+    .from('queue_items')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    console.error('Error removing queue item:', error);
+    throw error;
+  }
+  
+  // Fetch and return the updated queue immediately
+  return getQueue();
+}
+
 // Subscribe to queue changes
 export function subscribeToQueue(callback: (queue: QueueItem[]) => void) {
   console.log("Setting up Supabase real-time subscription for queue_items table");

@@ -8,9 +8,15 @@ const POLLING_INTERVAL = 3000;
 interface QueueContentsProps {
   // Optional queue prop for cases when parent wants to control the data
   queue?: QueueItem[];
+  isAuthenticated?: boolean;
+  onRemoveItem?: (id: string) => void;
 }
 
-export default function QueueContents({ queue: externalQueue }: QueueContentsProps) {
+export default function QueueContents({ 
+  queue: externalQueue,
+  isAuthenticated = false,
+  onRemoveItem
+}: QueueContentsProps) {
   // Local state for when component fetches its own data
   const [internalQueue, setInternalQueue] = useState<QueueItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -96,12 +102,25 @@ export default function QueueContents({ queue: externalQueue }: QueueContentsPro
       ) : (
         <ul>
           {queue.map((item, index) => (
-            <li key={`${item.id}-${index}`} className="border-b border-gray-700 py-2 text-gray-300">
-              {index === 0 ? <span className="font-bold mr-2 text-blue-400">[Front]</span> : ''}
-              <div>
-                [{item.value1}] v/s [{item.value2}]
+            <li key={`${item.id}-${index}`} className="border-b border-gray-700 py-2 text-gray-300 flex justify-between items-center">
+              <div className="flex-1">
+                {index === 0 ? <span className="font-bold mr-2 text-blue-400">[Front]</span> : ''}
+                <span>
+                  [{item.value1}] v/s [{item.value2}]
+                </span>
+                {index === queue.length - 1 ? <span className="font-bold ml-2 text-green-400">[Back]</span> : ''}
               </div>
-              {index === queue.length - 1 ? <span className="font-bold ml-2 text-green-400">[Back]</span> : ''}
+              
+              {/* Only show remove button if user is authenticated and onRemoveItem is provided */}
+              {isAuthenticated && onRemoveItem && (
+                <button 
+                  onClick={() => onRemoveItem(item.id)}
+                  className="ml-2 px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600 transition"
+                  aria-label="Remove item"
+                >
+                  Remove
+                </button>
+              )}
             </li>
           ))}
         </ul>
