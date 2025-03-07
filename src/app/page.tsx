@@ -2,25 +2,33 @@
 import { useState, useEffect } from 'react';
 import QueueModal from '../components/QueueModal';
 import QueueContents from '../components/QueueContents';
+import WaitingRoomQueue from '../components/WaitingRoomQueue';
 import AuthModal from '../components/AuthModal';
 import { supabase } from '../utils/supabase';
 import { 
-  getQueue, 
-  pushToQueue, 
-  popFromQueue, 
+  getQueue,
+  getQueueByType,
+  pushToQueue,
+  pushToWaitingRoom,
+  popFromQueue,
+  popFromWaitingRoom,
   removeQueueItem,
-  subscribeToQueue, 
+  moveItemToWaitingRoom,
+  subscribeToQueue,
+  subscribeToWaitingRoom,
   QueueItem 
 } from '../services/queueService';
 import { User } from '@supabase/supabase-js';
 
-// Polling interval in milliseconds (e.g., refresh every 3 seconds)
+// Polling interval in milliseconds
 const POLLING_INTERVAL = 3000;
 
 export default function Home() {
-  const [queue, setQueue] = useState<QueueItem[]>([]);
+  const [mainQueue, setMainQueue] = useState<QueueItem[]>([]);
+  const [waitingQueue, setWaitingQueue] = useState<QueueItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [operation, setOperation] = useState<'push' | 'pop'>('push');
+  const [activeQueue, setActiveQueue] = useState<'main' | 'waitingRoom'>('main');
   const [user, setUser] = useState<User | null>(null);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -35,9 +43,11 @@ export default function Home() {
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user || null);
       
-      // Get initial queue data
-      const queueData = await getQueue();
-      setQueue(queueData);
+      // Get initial queue data for both queues
+      const mainQueueData = await getQueue();
+      const waitingQueueData = await getQueueByType('waitingRoom');
+      setMainQueue(mainQueueData);
+      setWaitingQueue(waitingQueueData);
       
       setLoading(false);
     };
@@ -49,44 +59,65 @@ export default function Home() {
       setUser(session?.user || null);
     });
 
-    // Subscribe to queue changes
-    const queueSubscription = subscribeToQueue((updatedQueue) => {
-      setQueue(updatedQueue);
+    // Subscribe to main queue changes
+    const mainQueueSubscription = subscribeToQueue((updatedQueue) => {
+      setMainQueue(updatedQueue);
+    });
+    
+    // Subscribe to waiting room queue changes
+    const waitingQueueSubscription = subscribeToWaitingRoom((updatedQueue) => {
+      setWaitingQueue(updatedQueue);
     });
     
     // Set up polling for periodic refreshes
-    const pollingInterval = setInterval(async () => {
+    const mainPollingInterval = setInterval(async () => {
       try {
         const updatedQueue = await getQueue();
-        setQueue(updatedQueue);
+        setMainQueue(updatedQueue);
       } catch (error) {
-        console.error('Polling error:', error);
+        console.error('Main queue polling error:', error);
+      }
+    }, POLLING_INTERVAL);
+    
+    const waitingPollingInterval = setInterval(async () => {
+      try {
+        const updatedQueue = await getQueueByType('waitingRoom');
+        setWaitingQueue(updatedQueue);
+      } catch (error) {
+        console.error('Waiting room polling error:', error);
       }
     }, POLLING_INTERVAL);
 
     return () => {
       authSubscription.unsubscribe();
-      queueSubscription.unsubscribe();
-      clearInterval(pollingInterval);
+      mainQueueSubscription.unsubscribe();
+      waitingQueueSubscription.unsubscribe();
+      clearInterval(mainPollingInterval);
+      clearInterval(waitingPollingInterval);
     };
   }, []);
 
+  // Push to main queue (same behavior)
   const handlePush = () => {
     if (!user) {
       setAuthModalOpen(true);
       return;
     }
     setOperation('push');
+    setActiveQueue('main');
     setIsOpen(true);
   };
 
+  // Pop from waiting room (changed behavior)
   const handlePop = () => {
     if (!user) {
       setAuthModalOpen(true);
       return;
     }
-    if (queue.length > 0) {
+    
+    if (waitingQueue.length > 0) {
       setOperation('pop');
+      setActiveQueue('waitingRoom');
       setIsOpen(true);
     }
   };
@@ -98,13 +129,13 @@ export default function Home() {
     
     try {
       if (operation === 'push' && value1 && value2) {
-        // Update queue immediately after push
+        // Always push to main queue
         const updatedQueue = await pushToQueue(value1, value2);
-        setQueue(updatedQueue);
-      } else if (operation === 'pop' && queue.length > 0) {
-        // Update queue immediately after pop
-        const updatedQueue = await popFromQueue();
-        setQueue(updatedQueue);
+        setMainQueue(updatedQueue);
+      } else if (operation === 'pop') {
+        // Always pop from waiting room
+        const updatedQueue = await popFromWaitingRoom();
+        setWaitingQueue(updatedQueue);
       }
     } catch (error) {
       console.error('Operation failed:', error);
@@ -114,7 +145,37 @@ export default function Home() {
     }
   };
 
-  // Handle removing an individual queue item
+  // Function to move an item from main to waiting room
+  const handleMoveToWaitingRoom = async (id: string) => {
+    if (!user) {
+      setAuthModalOpen(true);
+      return;
+    }
+    
+    console.log('Starting move to waiting room for item:', id);
+    setOperationInProgress(true);
+    
+    try {
+      // Move the item from main to waiting room
+      console.log('Calling moveItemToWaitingRoom...');
+      const { main: updatedMainQueue, waitingRoom: updatedWaitingQueue } = await moveItemToWaitingRoom(id);
+      
+      console.log('Move completed, updating state...');
+      console.log('New main queue length:', updatedMainQueue.length);
+      console.log('New waiting room length:', updatedWaitingQueue.length);
+      
+      // Update both queues with the returned data
+      setMainQueue(updatedMainQueue);
+      setWaitingQueue(updatedWaitingQueue);
+      
+      console.log('Item moved to waiting room successfully');
+    } catch (error) {
+      console.error('Failed to move item to waiting room:', error);
+    } finally {
+      setOperationInProgress(false);
+    }
+  };
+
   const handleRemoveItem = async (id: string) => {
     if (!user) {
       setAuthModalOpen(true);
@@ -124,9 +185,27 @@ export default function Home() {
     setOperationInProgress(true);
     
     try {
-      // Remove the item and update the queue
-      const updatedQueue = await removeQueueItem(id);
-      setQueue(updatedQueue);
+      // First, determine which queue the item belongs to
+      const item = [...mainQueue, ...waitingQueue].find(item => item.id === id);
+      
+      if (!item) {
+        console.error('Item not found in any queue');
+        return;
+      }
+      
+      // Remove the item
+      const updatedItems = await removeQueueItem(id);
+      
+      // Update the appropriate queue
+      if (item.queue_type === 'main') {
+        // Fetch fresh main queue data
+        const updatedMainQueue = await getQueue();
+        setMainQueue(updatedMainQueue);
+      } else if (item.queue_type === 'waitingRoom') {
+        // Fetch fresh waiting room data
+        const updatedWaitingQueue = await getQueueByType('waitingRoom');
+        setWaitingQueue(updatedWaitingQueue);
+      }
     } catch (error) {
       console.error('Failed to remove item:', error);
     } finally {
@@ -142,7 +221,7 @@ export default function Home() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-white">Loading queue...</div>
+        <div className="text-white">Loading queues...</div>
       </div>
     );
   }
@@ -170,39 +249,64 @@ export default function Home() {
         )}
       </div>
       
-      <div className="flex flex-col items-center gap-4">
-        <h1 className="text-2xl font-bold mb-4 text-white">Live Queue</h1>
+      <div className="flex flex-col items-center gap-6">
+        <h1 className="text-2xl font-bold mb-4 text-white">Queue System</h1>
         
-        {/* Only show push/pop buttons to authenticated users */}
-        {user && (
-          <div className="flex gap-4 mb-4">
-            <button 
-              onClick={handlePush}
-              className="px-4 py-2 bg-blue-500 text-white rounded"
-              disabled={operationInProgress}
-            >
-              Push
-            </button>
-            <button 
-              onClick={handlePop}
-              className="px-4 py-2 bg-red-500 text-white rounded"
-              disabled={queue.length === 0 || operationInProgress}
-            >
-              Pop
-            </button>
-          </div>
-        )}
-
-        {/* Pass authentication status and removal handler to QueueContents */}
-        <QueueContents 
-          queue={queue} 
-          isAuthenticated={!!user}
-          onRemoveItem={handleRemoveItem}
-        />
+        {/* Waiting Room Queue */}
+        <div className="w-full max-w-2xl">
+          {/* Only show buttons to authenticated users */}
+          {user && (
+            <div className="flex gap-4 mb-2">
+              <button 
+                onClick={() => handlePop('waitingRoom')}
+                className="px-3 py-1 bg-red-500 text-white rounded"
+                disabled={waitingQueue.length === 0 || operationInProgress}
+              >
+                Remove from Waiting Room
+              </button>
+            </div>
+          )}
+          
+          <WaitingRoomQueue 
+            queue={waitingQueue}
+            isAuthenticated={!!user}
+            onRemoveItem={handleRemoveItem} // Keep delete functionality for waiting room
+          />
+        </div>
+        
+        {/* Main Queue */}
+        <div className="w-full max-w-2xl">
+          {/* Only show buttons to authenticated users */}
+          {user && (
+            <div className="flex gap-4 mb-2">
+              <button 
+                onClick={handlePush}
+                className="px-3 py-1 bg-blue-500 text-white rounded"
+                disabled={operationInProgress}
+              >
+                Add to Queue
+              </button>
+              <button 
+                onClick={handlePop}
+                className="px-3 py-1 bg-amber-600 text-white rounded"
+                disabled={waitingQueue.length === 0 || operationInProgress}
+              >
+                Pop from Waiting Room
+              </button>
+            </div>
+          )}
+          
+          <QueueContents 
+            queue={mainQueue}
+            isAuthenticated={!!user}
+            onRemoveItem={handleMoveToWaitingRoom} // Use move functionality for main queue
+            removeButtonLabel="Move to Waiting Room" // Change the label
+          />
+        </div>
         
         {!user && (
           <p className="mt-4 text-gray-400 text-center">
-            Sign in to add or remove items from the queue
+            Sign in to add or remove items from the queues
           </p>
         )}
       </div>
@@ -212,7 +316,13 @@ export default function Home() {
         onClose={() => setIsOpen(false)}
         operation={operation}
         onConfirm={handleConfirm}
-        itemToRemove={queue.length > 0 ? `[${queue[0].value1}] v/s [${queue[0].value2}]` : undefined}
+        itemToRemove={
+          operation === 'pop' && activeQueue === 'main' && mainQueue.length > 0 
+            ? `[${mainQueue[0].value1}] v/s [${mainQueue[0].value2}]` 
+            : operation === 'pop' && activeQueue === 'waitingRoom' && waitingQueue.length > 0
+            ? `[${waitingQueue[0].value1}] v/s [${waitingQueue[0].value2}]`
+            : undefined
+        }
         isProcessing={operationInProgress}
       />
 

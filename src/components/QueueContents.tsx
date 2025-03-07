@@ -10,12 +10,14 @@ interface QueueContentsProps {
   queue?: QueueItem[];
   isAuthenticated?: boolean;
   onRemoveItem?: (id: string) => void;
+  removeButtonLabel?: string; // Added prop for custom label
 }
 
 export default function QueueContents({ 
   queue: externalQueue,
   isAuthenticated = false,
-  onRemoveItem
+  onRemoveItem,
+  removeButtonLabel = "Remove" // Default label
 }: QueueContentsProps) {
   // Local state for when component fetches its own data
   const [internalQueue, setInternalQueue] = useState<QueueItem[]>([]);
@@ -115,10 +117,10 @@ export default function QueueContents({
               {isAuthenticated && onRemoveItem && (
                 <button 
                   onClick={() => onRemoveItem(item.id)}
-                  className="ml-2 px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600 transition"
-                  aria-label="Remove item"
+                  className="ml-2 px-2 py-1 bg-amber-600 text-white text-xs rounded hover:bg-amber-700 transition"
+                  aria-label={removeButtonLabel}
                 >
-                  Remove
+                  {removeButtonLabel}
                 </button>
               )}
             </li>
