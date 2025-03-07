@@ -7,6 +7,7 @@ export interface QueueItem {
   created_at: string;
   position: number;
   queue_type: string; // Add queue_type to distinguish between queues
+  moved_at?: string; // Timestamp when the item was moved to waiting room
 }
 
 // Fetch items for a specific queue type
@@ -205,10 +206,17 @@ export async function moveItemToWaitingRoom(id: string): Promise<{main: QueueIte
   const newPosition = positions && positions.length > 0 ? positions[0].position + 1 : 0;
   console.log('New position in waiting room:', newPosition);
   
+  // Set the current time as moved_at timestamp
+  const now = new Date().toISOString();
+  
   // Update the item to be in the waiting room
   const { error: updateError, data: updateData } = await supabase
     .from('queue_items')
-    .update({ queue_type: 'waitingRoom', position: newPosition })
+    .update({ 
+      queue_type: 'waitingRoom', 
+      position: newPosition,
+      moved_at: now  // Add the timestamp
+    })
     .eq('id', id)
     .select();
 
@@ -221,10 +229,7 @@ export async function moveItemToWaitingRoom(id: string): Promise<{main: QueueIte
   
   // Return both updated queues
   const main = await getQueueByType('main');
-  console.log('Updated main queue:', main);
-  
   const waitingRoom = await getQueueByType('waitingRoom');
-  console.log('Updated waiting room queue:', waitingRoom);
   
   return { main, waitingRoom };
 }

@@ -258,6 +258,13 @@ export default function Home() {
           {user && (
             <div className="flex gap-4 mb-2">
               <button 
+                onClick={() => handlePop()}
+                className="px-3 py-1 bg-amber-600 text-white rounded"
+                disabled={waitingQueue.length === 0 || operationInProgress}
+              >
+                Pop from Waiting Room
+              </button>
+              <button 
                 onClick={() => handlePop('waitingRoom')}
                 className="px-3 py-1 bg-red-500 text-white rounded"
                 disabled={waitingQueue.length === 0 || operationInProgress}
@@ -276,7 +283,7 @@ export default function Home() {
         
         {/* Main Queue */}
         <div className="w-full max-w-2xl">
-          {/* Only show buttons to authenticated users */}
+          {/* Only show Add button to authenticated users */}
           {user && (
             <div className="flex gap-4 mb-2">
               <button 
@@ -285,13 +292,6 @@ export default function Home() {
                 disabled={operationInProgress}
               >
                 Add to Queue
-              </button>
-              <button 
-                onClick={handlePop}
-                className="px-3 py-1 bg-amber-600 text-white rounded"
-                disabled={waitingQueue.length === 0 || operationInProgress}
-              >
-                Pop from Waiting Room
               </button>
             </div>
           )}

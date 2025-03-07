@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import { QueueItem, getQueueByType, subscribeToQueueByType } from '../services/queueService';
+import WaitingTimer from './WaitingTimer';
 
 // Polling interval in milliseconds
 const POLLING_INTERVAL = 3000;
@@ -91,19 +92,28 @@ export default function WaitingRoomQueue({
       ) : (
         <ul>
           {queue.map((item, index) => (
-            <li key={`${item.id}-${index}`} className="border-b border-amber-800 py-2 text-amber-100 flex justify-between items-center">
-              <div className="flex-1">
+            <li key={`${item.id}-${index}`} className="border-b border-amber-800 py-2 text-amber-100 flex items-center">
+              <div className="flex-1 flex items-center">
                 {index === 0 ? <span className="font-bold mr-2 text-amber-200">[First]</span> : ''}
-                <span>
-                  [{item.value1}] v/s [{item.value2}]
-                </span>
+                <div>
+                  <span>
+                    [{item.value1}] v/s [{item.value2}]
+                  </span>
+                </div>
                 {index === queue.length - 1 ? <span className="font-bold ml-2 text-amber-200">[Last]</span> : ''}
               </div>
+              
+              {/* Display timer more prominently on the side */}
+              {item.moved_at && (
+                <div className="min-w-[80px] text-center mx-2">
+                  <WaitingTimer movedAt={item.moved_at} />
+                </div>
+              )}
               
               {isAuthenticated && onRemoveItem && (
                 <button 
                   onClick={() => onRemoveItem(item.id)}
-                  className="ml-2 px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600 transition"
+                  className="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600 transition"
                   aria-label="Remove item"
                 >
                   Remove
