@@ -85,27 +85,27 @@ export default function WaitingRoomQueue({
   }
 
   return (
-    <div className="border border-gray-700 p-4 min-w-[300px] bg-amber-900 text-gray-200">
-      <h2 className="text-xl mb-2 text-amber-100">Waiting Room:</h2>
+    <div className="border border-gray-700 p-2 sm:p-4 min-w-[300px] w-full bg-amber-900 text-gray-200 rounded-lg">
+      <h2 className="text-lg sm:text-xl mb-2 text-amber-100">Waiting Room:</h2>
       {queue.length === 0 ? (
-        <p className="text-gray-300">Waiting room is empty</p>
+        <p className="text-gray-300 text-center py-4">Waiting room is empty</p>
       ) : (
         <ul>
           {queue.map((item, index) => (
-            <li key={`${item.id}-${index}`} className="border-b border-amber-800 py-2 text-amber-100 flex items-center">
-              <div className="flex-1 flex items-center">
-                {index === 0 ? <span className="font-bold mr-2 text-amber-200">[First]</span> : ''}
-                <div>
+            <li key={`${item.id}-${index}`} className="border-b border-amber-800 py-2 text-amber-100 flex flex-wrap sm:flex-nowrap items-center gap-2">
+              <div className="flex-1 min-w-0 flex flex-wrap sm:flex-nowrap items-center gap-1">
+                {index === 0 ? <span className="font-bold mr-1 text-amber-200 shrink-0">[First]</span> : ''}
+                <div className="break-words flex-1 min-w-0">
                   <span>
                     [{item.value1}] v/s [{item.value2}]
                   </span>
                 </div>
-                {index === queue.length - 1 ? <span className="font-bold ml-2 text-amber-200">[Last]</span> : ''}
+                {index === queue.length - 1 ? <span className="font-bold ml-1 text-amber-200 shrink-0">[Last]</span> : ''}
               </div>
               
-              {/* Display timer more prominently on the side */}
+              {/* Display timer */}
               {item.moved_at && (
-                <div className="min-w-[80px] text-center mx-2">
+                <div className="w-[76px] text-center mx-1 shrink-0">
                   <WaitingTimer movedAt={item.moved_at} />
                 </div>
               )}
@@ -113,7 +113,7 @@ export default function WaitingRoomQueue({
               {isAuthenticated && onRemoveItem && (
                 <button 
                   onClick={() => onRemoveItem(item.id)}
-                  className="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600 transition"
+                  className="px-2 py-1 bg-red-500 text-white text-xs rounded hover:bg-red-600 transition shrink-0"
                   aria-label="Remove item"
                 >
                   Remove

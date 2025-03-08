@@ -230,7 +230,7 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen p-24 bg-gray-900 text-gray-100">
+    <main className="min-h-screen px-4 py-8 sm:px-8 sm:py-12 md:p-16 bg-gray-900 text-gray-100">
       <div className="absolute top-4 right-4 flex items-center gap-4">
         {user ? (
           <>
@@ -252,27 +252,27 @@ export default function Home() {
         )}
       </div>
       
-      <div className="flex flex-col items-center gap-6">
-        <h1 className="text-2xl font-bold mb-4 text-white">Queue System</h1>
+      <div className="flex flex-col items-center gap-4 sm:gap-6 mx-auto max-w-lg md:max-w-xl lg:max-w-2xl">
+        <h1 className="text-xl sm:text-2xl font-bold mb-2 sm:mb-4 text-white text-center">Queue System</h1>
         
         {/* Waiting Room Queue */}
-        <div className="w-full max-w-2xl">
+        <div className="w-full">
           {/* Only show buttons to authenticated users */}
           {user && (
-            <div className="flex gap-4 mb-2">
+            <div className="flex gap-2 sm:gap-4 mb-2 justify-center">
               <button 
                 onClick={() => handlePop()}
-                className="px-3 py-1 bg-amber-600 text-white rounded"
+                className="px-2 py-1 sm:px-3 sm:py-1 bg-amber-600 text-white rounded text-sm sm:text-base"
                 disabled={waitingQueue.length === 0 || operationInProgress}
               >
                 Pop from Waiting Room
               </button>
               <button 
                 onClick={() => handlePop('waitingRoom')}
-                className="px-3 py-1 bg-red-500 text-white rounded"
+                className="px-2 py-1 sm:px-3 sm:py-1 bg-red-500 text-white rounded text-sm sm:text-base"
                 disabled={waitingQueue.length === 0 || operationInProgress}
               >
-                Remove from Waiting Room
+                Remove
               </button>
             </div>
           )}
@@ -285,13 +285,13 @@ export default function Home() {
         </div>
         
         {/* Main Queue */}
-        <div className="w-full max-w-2xl">
+        <div className="w-full">
           {/* Only show Add button to authenticated users */}
           {user && (
-            <div className="flex gap-4 mb-2">
+            <div className="flex mb-2 justify-center">
               <button 
                 onClick={handlePush}
-                className="px-3 py-1 bg-blue-500 text-white rounded"
+                className="px-2 py-1 sm:px-3 sm:py-1 bg-blue-500 text-white rounded text-sm sm:text-base"
                 disabled={operationInProgress}
               >
                 Add to Queue
@@ -308,7 +308,7 @@ export default function Home() {
         </div>
         
         {!user && (
-          <p className="mt-4 text-gray-400 text-center">
+          <p className="mt-4 text-gray-400 text-center text-sm sm:text-base">
             Sign in to add or remove items from the queues
           </p>
         )}

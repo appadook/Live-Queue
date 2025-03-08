@@ -97,17 +97,17 @@ export default function QueueContents({
   }
 
   return (
-    <div className="border border-gray-700 p-4 min-w-[300px] bg-gray-800 text-gray-200">
-      <h2 className="text-xl mb-2 text-gray-100">Queue Contents:</h2>
+    <div className="border border-gray-700 p-2 sm:p-4 min-w-[300px] w-full bg-gray-800 text-gray-200 rounded-lg">
+      <h2 className="text-lg sm:text-xl mb-2 text-gray-100">Queue Contents:</h2>
       {queue.length === 0 ? (
-        <p className="text-gray-400">Queue is empty</p>
+        <p className="text-gray-400 text-center py-4">Queue is empty</p>
       ) : (
         <ul>
           {queue.map((item, index) => (
-            <li key={`${item.id}-${index}`} className="border-b border-gray-700 py-2 text-gray-300 flex justify-between items-center">
-              <div className="flex-1">
+            <li key={`${item.id}-${index}`} className="border-b border-gray-700 py-2 text-gray-300 flex flex-wrap sm:flex-nowrap justify-between items-center gap-2">
+              <div className="flex-1 min-w-0">
                 {index === 0 ? <span className="font-bold mr-2 text-blue-400">[Front]</span> : ''}
-                <span>
+                <span className="break-words">
                   [{item.value1}] v/s [{item.value2}]
                 </span>
                 {index === queue.length - 1 ? <span className="font-bold ml-2 text-green-400">[Back]</span> : ''}
@@ -117,7 +117,7 @@ export default function QueueContents({
               {isAuthenticated && onRemoveItem && (
                 <button 
                   onClick={() => onRemoveItem(item.id)}
-                  className="ml-2 px-2 py-1 bg-amber-600 text-white text-xs rounded hover:bg-amber-700 transition"
+                  className="px-2 py-1 bg-amber-600 text-white text-xs rounded hover:bg-amber-700 transition shrink-0"
                   aria-label={removeButtonLabel}
                 >
                   {removeButtonLabel}
